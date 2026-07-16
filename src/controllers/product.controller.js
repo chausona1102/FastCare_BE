@@ -24,6 +24,26 @@ const createProduct = async (req, res) => {
   }
 };
 
+const getProductsWithLimit = async (req, res) => {
+  try {
+    const result = await productService.getProductsWithLimit(req.params["n"]);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const getProductsWithLimitAndDeleted = async (req, res) => {
+  try {
+    const result = await productService.getProductsWithLimitAndDeleted(
+      req.params["n"]
+    );
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
 const getAllProductWithDeleted = async (req, res) => {
   try {
     const result = await productService.getAllProductWithDeleted();
@@ -35,6 +55,16 @@ const getAllProductWithDeleted = async (req, res) => {
 const getProducts = async (req, res) => {
   try {
     const result = await productService.getProducts();
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const getProductByParentCategoryName = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const result = await productService.getProductByParentCategorySlug(slug);
     res.status(200).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -94,4 +124,7 @@ module.exports = {
   updateProduct,
   deleteProduct,
   restoreProduct,
+  getProductByParentCategoryName,
+  getProductsWithLimit,
+  getProductsWithLimitAndDeleted,
 };

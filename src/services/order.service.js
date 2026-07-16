@@ -113,6 +113,7 @@ const createOrder = async (
       product: item.product,
       code: `CODE_${item.variant}`,
       variant: item.variant,
+      color: item.color,
       quantity: item.quantity,
       title: item.title,
       currentPrice: item.currentPrice,
@@ -142,14 +143,58 @@ const getAllOrders = async () => {
 
 // Lấy đơn hàng theo id người dùng trong Database
 const getOrdersByUser = async (userId) => {
-  return await Order.find({ user: userId }).populate("shop").populate("user");
+  const orders = await Order.find({ user: userId })
+    .populate("shop")
+    .populate("user")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const orderIds = orders.map((o) => o._id);
+
+  const items = await OrderItem.find({ order: { $in: orderIds } })
+    .populate("product")
+    .populate("variant")
+    .lean();
+
+  const itemsByOrder = items.reduce((acc, item) => {
+    const key = item.order.toString();
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
+  return orders.map((order) => ({
+    ...order,
+    items: itemsByOrder[order._id.toString()] || [],
+  }));
 };
 
 // Lấy đơn hàng hiện tại theo id người dùng trong Database (đơn hàng có trạng thái khác delivered)
 const getCurrentOrdersOfUser = async (userId) => {
-  return await Order.find({ user: userId, status: { $ne: "delivered" } })
+  const orders = await Order.find({ user: userId, status: { $ne: "delivered" } })
     .populate("shop")
-    .populate("user");
+    .populate("user")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const orderIds = orders.map((o) => o._id);
+
+  const items = await OrderItem.find({ order: { $in: orderIds } })
+    .populate("product")
+    .populate("variant")
+    .lean();
+
+  const itemsByOrder = items.reduce((acc, item) => {
+    const key = item.order.toString();
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
+  return orders.map((order) => ({
+    ...order,
+    items: itemsByOrder[order._id.toString()] || [],
+  }));
 };
 
 // Lấy đơn hàng theo mã đơn hàng GHN trong Database

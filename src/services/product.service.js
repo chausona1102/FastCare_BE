@@ -69,12 +69,61 @@ const getProducts = async () => {
   return await Product.find({ deletedAt: null });
 };
 
+const getProductsWithLimit = async (n = 200) => {
+  return await Product.find({ deletedAt: null })
+    .sort({ createdAt: -1 })
+    .limit(Number(n));
+};
+
+const getProductsWithLimitAndDeleted = async (n = 200) => {
+  return await Product.find().sort({ createdAt: -1 }).limit(Number(n));
+};
+
 const getProductById = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id))
     throw new Error("Mã sản phẩm không hợp lệ");
-  const product = await Product.findById(id);
+  const product = await Product.findById(id).populate({
+    path: "category",
+    populate: { path: "parentCategory" },
+  });
   if (!product) throw new Error("Không tìm thấy sản phẩm");
   return product;
+};
+
+const getProductByParentCategorySlug = async (slug) => {
+  const products = await Product.aggregate([
+    {
+      $lookup: {
+        from: "categories",
+        localField: "category",
+        foreignField: "_id",
+        as: "categoryInfo",
+      },
+    },
+    { $unwind: "$categoryInfo" },
+    {
+      $lookup: {
+        from: "parentcategories",
+        localField: "categoryInfo.parentCategory",
+        foreignField: "_id",
+        as: "parentCategoryInfo",
+      },
+    },
+    { $unwind: "$parentCategoryInfo" },
+    {
+      $match: {
+        "parentCategoryInfo.slug": slug,
+        deletedAt: null,
+      },
+    },
+    {
+      $project: {
+        categoryInfo: 0,
+        parentCategoryInfo: 0,
+      },
+    },
+  ]);
+  return products;
 };
 
 const updateProduct = async (id, data) => {
@@ -89,13 +138,6 @@ const updateProduct = async (id, data) => {
   return updated;
 };
 
-// const deleteProduct = async (id) => {
-//   if (!mongoose.Types.ObjectId.isValid(id))
-//     throw new Error("Mã sản phẩm không hợp lệ");
-//   const deleted = await Product.findByIdAndDelete(id);
-//   if (!deleted) throw new Error("Xóa thất bại");
-//   return deleted;
-// };
 const deleteProduct = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id))
     throw new Error("Mã sản phẩm không hợp lệ");
@@ -141,4 +183,10 @@ module.exports = {
   updateProduct,
   deleteProduct,
   restoreProduct,
+
+  // get product by name of parent category
+  getProductByParentCategorySlug,
+  // getproduct limits
+  getProductsWithLimit,
+  getProductsWithLimitAndDeleted,
 };

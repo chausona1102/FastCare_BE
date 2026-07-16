@@ -27,6 +27,15 @@ const getCartOfUser = async (req, res) => {
   }
 };
 
+const getCartWithItems = async (req, res) => {
+  try {
+    const result = await cartService.getCartWithItems(req.user.id);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
 const deleteCart = async (req, res) => {
   try {
     const result = await cartService.deleteCart(req.user.id);
@@ -36,4 +45,10 @@ const deleteCart = async (req, res) => {
   }
 };
 
-module.exports = { createCart, getAllCart, getCartOfUser, deleteCart };
+module.exports = {
+  createCart,
+  getAllCart,
+  getCartOfUser,
+  getCartWithItems,
+  deleteCart,
+};

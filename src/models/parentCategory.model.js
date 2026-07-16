@@ -6,6 +6,8 @@ const parentCategorySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    avatar: { type: String },
+    slug: { type: String, required: true, unique: true },
   },
   { timestamps: true }
 );

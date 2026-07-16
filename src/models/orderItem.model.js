@@ -17,6 +17,7 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
       ref: "Variant", 
     },
+    color: { type: String, required: true },
     title: { type: String, required: true },
     code: { type: String, required: true },
     currentPrice: { type: Number, required: true },

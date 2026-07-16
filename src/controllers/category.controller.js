@@ -1,8 +1,17 @@
 const categoryService = require("../services/category.service");
+const { uploadImage } = require("../utils/cloudinary");
 
 const createCategory = async (req, res) => {
   try {
-    const result = await categoryService.createCategory(req.body);
+    let avatarUrl = "";
+    if (req.file) {
+      avatarUrl = await uploadImage(req.file.buffer);
+    }
+
+    const result = await categoryService.createCategory({
+      ...req.body,
+      avatar: avatarUrl,
+    });
     res.status(201).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -35,12 +44,23 @@ const getCategoryById = async (req, res) => {
 //     }
 // }
 
+const getBrandByParentCategoryId = async (req, res) => {
+  try {
+    const result = await categoryService.getBrandByParentCategoryId(
+      req.params.id
+    );
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
 const updateCategory = async (req, res) => {
   try {
-    const result = await categoryService.updateCategory(
-      req.params.id,
-      req.body
-    );
+    const result = await categoryService.updateCategory(req.params.id, {
+      ...req.body,
+      avatar: req.file ? await uploadImage(req.file.buffer) : undefined,
+    });
     res.status(200).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -62,4 +82,5 @@ module.exports = {
   getCategoryById,
   updateCategory,
   deleteCategory,
+  getBrandByParentCategoryId,
 };

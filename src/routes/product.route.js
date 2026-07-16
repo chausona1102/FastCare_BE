@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middlewares/upload.middleware");
-const { verifyToken, verifyAdmin } = require("../middlewares/auth.middleware");
+const { verifyToken, verifyStaff } = require("../middlewares/auth.middleware");
 const {
   createProduct,
   getAllProductWithDeleted,
@@ -10,6 +10,9 @@ const {
   updateProduct,
   deleteProduct,
   restoreProduct,
+  getProductByParentCategoryName,
+  getProductsWithLimit,
+  getProductsWithLimitAndDeleted,
 } = require("../controllers/product.controller");
 
 router.post(
@@ -19,11 +22,14 @@ router.post(
     { name: "images", maxCount: 10 },
   ]),
   verifyToken,
-  verifyAdmin,
+  verifyStaff,
   createProduct
 );
 router.get("/", getProducts);
-router.get("/all", verifyToken, verifyAdmin, getAllProductWithDeleted);
+router.get("/category/:slug", getProductByParentCategoryName);
+router.get("/limit/:n", getProductsWithLimit);
+router.get("/limit/all/:n", getProductsWithLimitAndDeleted);
+router.get("/all", verifyToken, verifyStaff, getAllProductWithDeleted);
 router.get("/:id", getProductById);
 router.patch(
   "/:id",
@@ -32,10 +38,10 @@ router.patch(
     { name: "images", maxCount: 10 },
   ]),
   verifyToken,
-  verifyAdmin,
+  verifyStaff,
   updateProduct
 );
-router.delete("/:id", verifyToken, verifyAdmin, deleteProduct);
-router.delete("/restore/:id", verifyToken, verifyAdmin, restoreProduct);
+router.delete("/:id", verifyToken, verifyStaff, deleteProduct);
+router.delete("/restore/:id", verifyToken, verifyStaff, restoreProduct);
 
 module.exports = router;

@@ -1,10 +1,10 @@
 const ParentCategory = require("../models/parentCategory.model");
 
-const createParentCategory = async ({ name }) => {
+const createParentCategory = async ({ name, avatar, slug }) => {
   const existed = await ParentCategory.findOne({ name });
   if (existed) throw new Error("Phân loại đã tồn tại");
 
-  const parentCategory = await ParentCategory.create({ name });
+  const parentCategory = await ParentCategory.create({ name, avatar, slug });
   return parentCategory;
 };
 
@@ -18,13 +18,13 @@ const getParentCategoryById = async (id) => {
   return parentCategory;
 };
 
-const updateParentCategory = async (id, { name }) => {
+const updateParentCategory = async (id, { name, avatar, slug }) => {
   const existed = await ParentCategory.findOne({ name, _id: { $ne: id } });
   if (existed) throw new Error("Tên phân loại đã tồn tại");
 
   const updated = await ParentCategory.findByIdAndUpdate(
     id,
-    { name },
+    { name, avatar, slug },
     { returnDocument: "after" }
   );
   if (!updated) throw new Error("Không tìm thấy phân loại");

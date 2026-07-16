@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { verifyToken, verifyAdmin } = require("../middlewares/auth.middleware");
+const { verifyToken, verifyStaff } = require("../middlewares/auth.middleware");
+const upload = require("../middlewares/upload.middleware");
 
 const {
   createCategory,
@@ -8,12 +9,26 @@ const {
   getCategoryById,
   updateCategory,
   deleteCategory,
+  getBrandByParentCategoryId,
 } = require("../controllers/category.controller");
 
-router.post("/", verifyToken, verifyAdmin, createCategory);
+router.post(
+  "/",
+  upload.single("avatar"),
+  verifyToken,
+  verifyStaff,
+  createCategory
+);
 router.get("/", getAllCategory);
 router.get("/:id", getCategoryById);
-router.patch("/:id", verifyToken, verifyAdmin, updateCategory);
-router.delete("/:id", verifyToken, verifyAdmin, deleteCategory);
+router.get("/brands/:id", getBrandByParentCategoryId);
+router.patch(
+  "/:id",
+  upload.single("avatar"),
+  verifyToken,
+  verifyStaff,
+  updateCategory
+);
+router.delete("/:id", verifyToken, verifyStaff, deleteCategory);
 
 module.exports = router;
