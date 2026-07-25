@@ -33,6 +33,15 @@ const getProductsWithLimit = async (req, res) => {
   }
 };
 
+const getHotProductWithLimit = async (req, res) => {
+  try {
+    const result = await productService.getHotProductWithLimit(req.params["n"]);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
 const getProductsWithLimitAndDeleted = async (req, res) => {
   try {
     const result = await productService.getProductsWithLimitAndDeleted(
@@ -127,4 +136,5 @@ module.exports = {
   getProductByParentCategoryName,
   getProductsWithLimit,
   getProductsWithLimitAndDeleted,
+  getHotProductWithLimit
 };

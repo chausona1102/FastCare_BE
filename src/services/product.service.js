@@ -75,6 +75,10 @@ const getProductsWithLimit = async (n = 200) => {
     .limit(Number(n));
 };
 
+const getHotProductWithLimit = async (n = 20) => {
+  return await Product.find({deletedAt: null}).sort({ sold: -1}).limit(Number(n));
+}
+
 const getProductsWithLimitAndDeleted = async (n = 200) => {
   return await Product.find().sort({ createdAt: -1 }).limit(Number(n));
 };
@@ -189,4 +193,5 @@ module.exports = {
   // getproduct limits
   getProductsWithLimit,
   getProductsWithLimitAndDeleted,
+  getHotProductWithLimit
 };

@@ -13,6 +13,7 @@ const {
   getProductByParentCategoryName,
   getProductsWithLimit,
   getProductsWithLimitAndDeleted,
+  getHotProductWithLimit
 } = require("../controllers/product.controller");
 
 router.post(
@@ -29,6 +30,7 @@ router.get("/", getProducts);
 router.get("/category/:slug", getProductByParentCategoryName);
 router.get("/limit/:n", getProductsWithLimit);
 router.get("/limit/all/:n", getProductsWithLimitAndDeleted);
+router.get("/hot/:n", getHotProductWithLimit);
 router.get("/all", verifyToken, verifyStaff, getAllProductWithDeleted);
 router.get("/:id", getProductById);
 router.patch(

@@ -34,7 +34,7 @@ const userRoute = require("./src/routes/user.route");
 
 // mount routes
 app.use("/api/auth", authRoute);
-app.use("/api/parentcategory", parentCategoryRoute);
+app.use("/api/parent/category", parentCategoryRoute);
 app.use("/api/category", categoryRoute);
 app.use("/api/product", productRoute);
 app.use("/api/location", locationRoute);

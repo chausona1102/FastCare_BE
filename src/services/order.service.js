@@ -1,5 +1,6 @@
 const Order = require("../models/order.model");
 const OrderItem = require("../models/orderItem.model");
+const Product = require("../models/product.model");
 const Location = require("../models/location.model");
 const shopService = require("./shop.service");
 const User = require("../models/user.model");
@@ -123,6 +124,13 @@ const createOrder = async (
       height: item.height,
     }));
     await OrderItem.insertMany(orderItems, { session: orderSession });
+    for (const item of items) {
+      await Product.findByIdAndUpdate(
+        item.product,
+        { $inc: { sold: item.quantity } },
+        { session: orderSession }
+      );
+    }
     await orderSession.commitTransaction();
   } catch (error) {
     await orderSession.abortTransaction();
