@@ -68,6 +68,25 @@ const getBrandByParentCategoryId = async (id) => {
   ]);
   return brands;
 };
+
+const getBrandByParentCategorySlug = async (slug, limit) => {
+ const parentCategory = await ParentCategory.findOne({ slug: slug });
+ if (!parentCategory) throw new Error("Không tìm thấy phân loại cha");
+ const brands = await Category.aggregate([
+  { $match: { parentCategory: new mongoose.Types.ObjectId(parentCategory._id) }},
+  {
+    $group: {
+      _id: "$name",
+      categoryId: { $first: "$_id" },
+      avatar: { $first: "$avatar" },
+    },
+  },
+  { $project: { _id: 0, name: "$_id", categoryId: 1, avatar: 1 } },
+  { $limit: Number(limit) || 10}
+ ]);
+ return brands;
+};
+
 const deleteCategory = async (id) => {
   const existed = await Category.findById(id);
   if (!existed) throw new Error("Không tìm thấy phân loại");
@@ -83,4 +102,5 @@ module.exports = {
   updateCategory,
   deleteCategory,
   getBrandByParentCategoryId,
+  getBrandByParentCategorySlug,
 };

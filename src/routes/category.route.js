@@ -10,6 +10,7 @@ const {
   updateCategory,
   deleteCategory,
   getBrandByParentCategoryId,
+  getBrandByParentCategorySlug
 } = require("../controllers/category.controller");
 
 router.post(
@@ -22,6 +23,8 @@ router.post(
 router.get("/", getAllCategory);
 router.get("/:id", getCategoryById);
 router.get("/brands/:id", getBrandByParentCategoryId);
+router.get("/brands/slug/:slug/:limit", getBrandByParentCategorySlug);
+
 router.patch(
   "/:id",
   upload.single("avatar"),

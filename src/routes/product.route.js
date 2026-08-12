@@ -27,7 +27,7 @@ router.post(
   createProduct
 );
 router.get("/", getProducts);
-router.get("/category/:slug", getProductByParentCategoryName);
+router.get("/category/:slug/:limit", getProductByParentCategoryName);
 router.get("/limit/:n", getProductsWithLimit);
 router.get("/limit/all/:n", getProductsWithLimitAndDeleted);
 router.get("/hot/:n", getHotProductWithLimit);

@@ -55,6 +55,17 @@ const getBrandByParentCategoryId = async (req, res) => {
   }
 };
 
+const getBrandByParentCategorySlug = async (req, res) => {
+  try {
+    const result = await categoryService.getBrandByParentCategorySlug(
+      req.params.slug, req.params.limit
+    );
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
 const updateCategory = async (req, res) => {
   try {
     const result = await categoryService.updateCategory(req.params.id, {
@@ -83,4 +94,5 @@ module.exports = {
   updateCategory,
   deleteCategory,
   getBrandByParentCategoryId,
+  getBrandByParentCategorySlug
 };

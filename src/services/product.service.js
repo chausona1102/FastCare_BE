@@ -94,7 +94,7 @@ const getProductById = async (id) => {
   return product;
 };
 
-const getProductByParentCategorySlug = async (slug) => {
+const getProductByParentCategorySlug = async (slug, limit = 20) => {
   const products = await Product.aggregate([
     {
       $lookup: {
@@ -126,6 +126,7 @@ const getProductByParentCategorySlug = async (slug) => {
         parentCategoryInfo: 0,
       },
     },
+    { $limit: Number(limit) },
   ]);
   return products;
 };

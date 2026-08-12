@@ -72,8 +72,8 @@ const getProducts = async (req, res) => {
 
 const getProductByParentCategoryName = async (req, res) => {
   try {
-    const { slug } = req.params;
-    const result = await productService.getProductByParentCategorySlug(slug);
+    const { slug, limit } = req.params;
+    const result = await productService.getProductByParentCategorySlug(slug, limit);
     res.status(200).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
