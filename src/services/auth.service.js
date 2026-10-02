@@ -87,6 +87,7 @@ const resendVerify = async (email) => {
 const login = async ({ email, password, deviceInfo, ipAddress }) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error("Email không tồn tại");
+  if (user.isDeleted) throw new Error("Tài khoản không tồn tại");
   if (!user.isActive) throw new Error("Tài khoản đã bị khóa");
   if (!user.isVerified) throw new AppError("Chưa xác thực Email", 403);
 
@@ -140,7 +141,8 @@ const refreshAccessToken = async (refreshToken) => {
   if (!storedToken) throw new AppError("Refresh token đã bị thu hồi", 401);
 
   const user = await User.findById(payload.id);
-  if (!user || !user.isActive) throw new AppError("Tài khoản không hợp lệ", 401);
+  if (!user || !user.isActive || user.isDeleted)
+    throw new AppError("Tài khoản không hợp lệ", 401);
 
   const newAccessToken = generateAccessToken(user);
   const newRefreshToken = generateRefreshToken(user, 30);
@@ -160,7 +162,7 @@ const refreshAccessToken = async (refreshToken) => {
 
 const getMe = async (userId) => {
   const user = await User.findById(userId).select("-password -verifyToken -verifyTokenExpires");
-  if (!user) throw new AppError("Người dùng không tồn tại", 404);
+  if (!user || user.isDeleted) throw new AppError("Người dùng không tồn tại", 404);
 
   return {
     id: user._id,

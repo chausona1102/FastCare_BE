@@ -9,6 +9,9 @@ const {
   getLocationByUser,
   updateLocation,
   deleteLocation,
+  getProvinces,
+  getDistricts,
+  getWards,
 } = require("../controllers/location.controller");
 
 router.post("/", verifyToken, createLocation);
@@ -16,6 +19,9 @@ router.get("/", verifyToken, verifyAdmin, getAllLocation);
 
 router.get("/user", verifyToken, getLocationByUser);
 router.get("/user/default", verifyToken, getLocationDefaultOfUser);
+router.get("/address/provinces", verifyToken, getProvinces);
+router.get("/address/districts", verifyToken, getDistricts);
+router.get("/address/wards", verifyToken, getWards);
 
 router.get("/:id", verifyToken, getLocationById);
 

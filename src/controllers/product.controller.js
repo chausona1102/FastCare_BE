@@ -70,6 +70,17 @@ const getProducts = async (req, res) => {
   }
 };
 
+const searchProducts = async (req, res) => {
+  try {
+    const keyword = String(req.query.keyword || req.query.q || req.query.search || "").trim();
+    const limit = Number(req.query.limit || 50);
+    const result = await productService.searchProducts(keyword, limit);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
 const getProductByParentCategoryName = async (req, res) => {
   try {
     const { slug, limit } = req.params;
@@ -129,6 +140,7 @@ module.exports = {
   createProduct,
   getAllProductWithDeleted,
   getProducts,
+  searchProducts,
   getProductById,
   updateProduct,
   deleteProduct,

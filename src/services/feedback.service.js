@@ -1,17 +1,33 @@
 const Feedback = require("../models/feedback.model");
 const Product = require("../models/product.model");
+const Order = require("../models/order.model");
 const { checkObjectID } = require("../utils/validate");
 
 const createFeedback = async (data) => {
-  const { product, variant, user, star, feedbackTags, comment, images } = data;
+  const { product, variant, user, order, star, feedbackTags, comment, images } = data;
   checkObjectID(product, "Mã sản phẩm không hợp lệ");
   checkObjectID(variant, "Mã phiên bản không hợp lệ");
   checkObjectID(user, "Mã khách hàng không hợp lệ");
+
+  if (order) {
+    checkObjectID(order, "Mã đơn hàng không hợp lệ");
+    const existedOrder = await Order.findById(order);
+    if (!existedOrder) throw new Error("Không tồn tại đơn hàng này");
+    if (existedOrder.user.toString() !== user.toString()) {
+      throw new Error("Bạn không thể đánh giá đơn hàng của người khác");
+    }
+  }
+
   const existed = await Feedback.findOne({ user, product });
   if (existed) throw new Error("Người dùng đã phản hồi trước đó");
 
   const feed = await Feedback.create(data);
   if (!feed) throw new Error("Phản hồi thất bại");
+
+  if (order) {
+    await Order.findByIdAndUpdate(order, { isRating: true }, { new: true });
+  }
+
   return feed;
 };
 
@@ -19,7 +35,8 @@ const getFeedbackOfProduct = async (productID) => {
   checkObjectID(productID, "Mã sản phẩm không hợp lệ");
   const existed = await Product.findById(productID);
   if (!existed) throw new Error("Không tồn tại sản phẩm này");
-  const feeds = await Feedback.find({ product: productID });
+  const feeds = await Feedback.find({ product: productID })
+                      .populate("user", "fullname avatar").sort({ createdAt: -1 });
   return feeds;
 };
 

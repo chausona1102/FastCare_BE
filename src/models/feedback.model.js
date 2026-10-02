@@ -2,6 +2,10 @@ const mongoose = require("mongoose");
 
 const feedbackSchema = new mongoose.Schema(
   {
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+    },
     product: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,

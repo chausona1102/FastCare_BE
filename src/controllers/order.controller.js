@@ -9,9 +9,30 @@ const createOrder = async (req, res) => {
   }
 };
 
+const confirmOrder = async (req, res) => {
+  try {
+    const order = await orderService.confirmOrder(req.params.id);
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+const confirmDelivery = async (req, res) => {
+  try {
+    const order = await orderService.confirmDelivery({
+      userId: req.user.id,
+      orderId: req.params.id,
+    });
+    res.status(200).json(order);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
 const getAllOrders = async (req, res) => {
   try {
-    const orders = await orderService.getAllOrders();
+    const orders = await orderService.getAllOrders(req.query.view || "all");
     res.status(200).json(orders);
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -77,10 +98,25 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+
+
 const returnOrder = async (req, res) => {
   try {
     const updatedOrder = await orderService.returnOrder({
+      userId: req.user.id,
       orderCode: req.params.orderCode,
+    });
+    res.status(200).json(updatedOrder);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const cancelOrder = async (req, res) => {
+  try {
+    const updatedOrder = await orderService.cancelOrder({
+      orderId: req.params.id,
+      orderCode: req.params.orderCode || req.params.id,
     });
     res.status(200).json(updatedOrder);
   } catch (e) {
@@ -90,6 +126,8 @@ const returnOrder = async (req, res) => {
 
 module.exports = {
   createOrder,
+  confirmOrder,
+  confirmDelivery,
   getAllOrders,
   getOrdersByUser,
   getCurrentOrdersOfUser,
@@ -98,4 +136,5 @@ module.exports = {
   getOrderByCodeGHN,
   updateOrderStatus,
   returnOrder,
+  cancelOrder,
 };

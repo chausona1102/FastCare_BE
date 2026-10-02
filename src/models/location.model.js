@@ -14,6 +14,15 @@ const locationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+locationSchema.index(
+  { user: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { isDefault: true },
+    name: "one_default_location_per_user",
+  }
+);
+
 const Location = mongoose.model("Location", locationSchema);
 
 module.exports = Location;

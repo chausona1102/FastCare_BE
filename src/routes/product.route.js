@@ -6,6 +6,7 @@ const {
   createProduct,
   getAllProductWithDeleted,
   getProducts,
+  searchProducts,
   getProductById,
   updateProduct,
   deleteProduct,
@@ -27,6 +28,7 @@ router.post(
   createProduct
 );
 router.get("/", getProducts);
+router.get("/search", searchProducts);
 router.get("/category/:slug/:limit", getProductByParentCategoryName);
 router.get("/limit/:n", getProductsWithLimit);
 router.get("/limit/all/:n", getProductsWithLimitAndDeleted);

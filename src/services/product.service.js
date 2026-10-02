@@ -69,6 +69,37 @@ const getProducts = async () => {
   return await Product.find({ deletedAt: null });
 };
 
+const searchProducts = async (keyword = "", limit = 50) => {
+  const sanitizedKeyword = String(keyword).trim();
+
+  if (!sanitizedKeyword) {
+    return await Product.find({ deletedAt: null }).limit(Number(limit)).populate({
+      path: "category",
+      populate: { path: "parentCategory" },
+    });
+  }
+
+  const safeKeyword = sanitizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(safeKeyword, "i");
+
+  return await Product.find({
+    deletedAt: null,
+    $or: [
+      { title: { $regex: regex } },
+      { brand: { $regex: regex } },
+      { displayTech: { $regex: regex } },
+      { os: { $regex: regex } },
+      { chipset: { $regex: regex } },
+      { cpu: { $regex: regex } },
+    ],
+  })
+    .limit(Number(limit))
+    .populate({
+      path: "category",
+      populate: { path: "parentCategory" },
+    });
+};
+
 const getProductsWithLimit = async (n = 200) => {
   return await Product.find({ deletedAt: null })
     .sort({ createdAt: -1 })
@@ -194,5 +225,6 @@ module.exports = {
   // getproduct limits
   getProductsWithLimit,
   getProductsWithLimitAndDeleted,
-  getHotProductWithLimit
+  getHotProductWithLimit,
+  searchProducts
 };

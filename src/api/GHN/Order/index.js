@@ -115,6 +115,59 @@ const returnOrder = async ({ orderCode }) => {
   }
 };
 
+const calculateShippingFee = async ({
+  fromDistrictId,
+  fromWardCode,
+  serviceId,
+  serviceTypeId,
+  toDistrictId,
+  toWardCode,
+  height,
+  length,
+  weight,
+  width,
+  insuranceValue,
+  codFailedAmount,
+  coupon,
+  items,
+}) => {
+  try {
+    const response = await axios.post(
+      "https://dev-online-gateway.ghn.vn/shiip/public-api/v2/shipping-order/fee",
+      {
+        from_district_id: fromDistrictId,
+        from_ward_code: fromWardCode,
+        service_id: serviceId,
+        service_type_id: serviceTypeId,
+        to_district_id: toDistrictId,
+        to_ward_code: toWardCode,
+        height,
+        length,
+        weight,
+        width,
+        insurance_value: insuranceValue,
+        cod_failed_amount: codFailedAmount,
+        coupon,
+        items,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Token: API_GHN_TOKEN,
+          ShopId: API_GHN_SHOP_ID,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error calculating shipping fee:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
 const cancelOrder = async ({ orderCode }) => {
   try {
     const response = await axios.post(
@@ -142,4 +195,5 @@ module.exports = {
   cancelOrder,
   getOrderByCode,
   returnOrder,
+  calculateShippingFee
 };
