@@ -7,8 +7,10 @@ const createVariant = async (req, res) => {
     if (req.files["images"] && req.files["images"].length > 0) {
       imageUrls = await uploadMultipleImage(req.files["images"]);
     }
+    const colors = req.body.colors ? JSON.parse(req.body.colors) : [];
     const result = await variantService.createVariant({
       ...req.body,
+      colors,
       images: imageUrls,
     });
     res.status(201).json(result);
@@ -28,7 +30,10 @@ const getAllVariant = async (req, res) => {
 
 const getAllVariantWithDelete = async (req, res) => {
   try {
-    const result = await variantService.getAllVariantWithDelete();
+    const result = await variantService.getAllVariantWithDelete(
+      req.query.search,
+      req.query.status
+    );
     res.status(200).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -48,6 +53,9 @@ const updateVariant = async (req, res) => {
   try {
     const updateData = { ...req.body };
 
+    if (req.body.colors !== undefined) {
+      updateData.colors = JSON.parse(req.body.colors);
+    }
     if (req.files["images"] && req.files["images"].length > 0) {
       updateData.images = await uploadMultipleImage(req.files["images"]);
     }

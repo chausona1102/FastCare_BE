@@ -38,18 +38,25 @@ const getParentCategoryById = async (req, res) => {
   }
 };
 
-const updateParentCategory = async (id, { name, avatar, slug }) => {
-  const existed = await ParentCategory.findOne({ name, _id: { $ne: id } });
-  if (existed) throw new Error("Tên phân loại đã tồn tại");
-
-  const updateData = { name, slug };
-  if (avatar) updateData.avatar = avatar;
-
-  const updated = await ParentCategory.findByIdAndUpdate(id, updateData, {
-    returnDocument: "after",
-  });
-  if (!updated) throw new Error("Không tìm thấy phân loại");
-  return updated;
+const updateParentCategory = async (req, res) => {
+  try {
+    const updateData = {
+      name: req.body.name,
+      slug: slugify(req.body.name, { lower: true, strict: true }),
+    };
+    if (req.file) {
+      updateData.avatar = await uploadImage(req.file.buffer);
+    } else if (req.body.removeAvatar === "true") {
+      updateData.avatar = "";
+    }
+    const result = await parentCateService.updateParentCategory(
+      req.params.id,
+      updateData
+    );
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
 };
 
 const deleteParentCategory = async (req, res) => {

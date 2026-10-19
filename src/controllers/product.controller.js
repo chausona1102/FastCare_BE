@@ -1,6 +1,20 @@
 const productService = require("../services/product.service");
 const { uploadImage, uploadMultipleImage } = require("../utils/cloudinary");
 
+const parseSpecifications = (data) => {
+  if (typeof data.specifications !== "string") return data;
+  let specifications;
+  try {
+    specifications = JSON.parse(data.specifications);
+  } catch {
+    throw new Error("Thông số sản phẩm không đúng định dạng");
+  }
+  if (!specifications || typeof specifications !== "object" || Array.isArray(specifications)) {
+    throw new Error("Thông số sản phẩm không hợp lệ");
+  }
+  return { ...data, specifications };
+};
+
 const createProduct = async (req, res) => {
   try {
     let avatarUrl = "";
@@ -14,7 +28,7 @@ const createProduct = async (req, res) => {
     }
 
     const result = await productService.createProduct({
-      ...req.body,
+      ...parseSpecifications(req.body),
       avatar: avatarUrl,
       images: imageUrls,
     });
@@ -55,7 +69,12 @@ const getProductsWithLimitAndDeleted = async (req, res) => {
 
 const getAllProductWithDeleted = async (req, res) => {
   try {
-    const result = await productService.getAllProductWithDeleted();
+    const result = await productService.getAllProductWithDeleted(
+      req.query.search,
+      req.query.status,
+      req.query.skip,
+      req.query.limit
+    );
     res.status(200).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -102,7 +121,7 @@ const getProductById = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   try {
-    let data = { ...req.body };
+    let data = parseSpecifications(req.body);
 
     if (req.files?.["avatar"]) {
       data.avatar = await uploadImage(req.files["avatar"][0].buffer);
@@ -112,7 +131,7 @@ const updateProduct = async (req, res) => {
       data.images = await uploadMultipleImage(req.files["images"]);
     }
 
-    const result = await productService.updateProduct(req.params.id, req.body);
+    const result = await productService.updateProduct(req.params.id, data);
     res.status(200).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });

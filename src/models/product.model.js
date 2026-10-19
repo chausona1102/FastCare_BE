@@ -1,5 +1,61 @@
 const mongoose = require("mongoose");
 
+const phoneSpecificationsSchema = new mongoose.Schema(
+  {
+    ram: String,
+    storage: String,
+    screenSize: Number,
+    displayTech: String,
+    screenFeatures: String,
+    rearCamera: String,
+    frontCamera: String,
+    chipset: String,
+    nfc: String,
+    sim: String,
+    os: String,
+    screenResolution: String,
+    cpu: String,
+  },
+  { _id: false }
+);
+
+const laptopSpecificationsSchema = new mongoose.Schema(
+  {
+    ram: String,
+    storage: String,
+    screenSize: Number,
+    displayTech: String,
+    screenFeatures: String,
+    screenResolution: String,
+    cpu: String,
+    gpu: String,
+    os: String,
+    battery: String,
+  },
+  { _id: false }
+);
+
+const accessorySpecificationsSchema = new mongoose.Schema(
+  {
+    compatibility: String,
+    connection: String,
+    material: String,
+    capacity: String,
+    connector: String,
+    power: String,
+  },
+  { _id: false }
+);
+
+const specificationsSchema = new mongoose.Schema(
+  {
+    phone: phoneSpecificationsSchema,
+    laptop: laptopSpecificationsSchema,
+    accessory: accessorySpecificationsSchema,
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
@@ -11,6 +67,12 @@ const productSchema = new mongoose.Schema(
     discount: { type: Number, default: 0 },
     installment: { type: Number, default: 0 },
     brand: { type: String },
+    productType: {
+      type: String,
+      enum: ["phone", "laptop", "accessory"],
+    },
+    specifications: { type: specificationsSchema, default: () => ({}) },
+    // Legacy flat fields are retained so existing product documents remain readable.
     ram: { type: String },
     storage: { type: String },
     screenSize: { type: Number },

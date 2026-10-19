@@ -20,7 +20,12 @@ const createCategory = async (req, res) => {
 
 const getAllCategory = async (req, res) => {
   try {
-    const result = await categoryService.getAllCategory();
+    const result = await categoryService.getAllCategory({
+      search: req.query.search,
+      parentCategory: req.query.parentCategory,
+      skip: req.query.skip,
+      limit: req.query.limit,
+    });
     res.status(200).json(result);
   } catch (e) {
     res.status(400).json({ message: e.message });
@@ -68,9 +73,17 @@ const getBrandByParentCategorySlug = async (req, res) => {
 
 const updateCategory = async (req, res) => {
   try {
+    const { name, parentCategory, removeAvatar } = req.body;
+    let avatar;
+    if (req.file) {
+      avatar = await uploadImage(req.file.buffer);
+    } else if (removeAvatar === "true") {
+      avatar = "";
+    }
     const result = await categoryService.updateCategory(req.params.id, {
-      ...req.body,
-      avatar: req.file ? await uploadImage(req.file.buffer) : undefined,
+      name,
+      parentCategory,
+      avatar,
     });
     res.status(200).json(result);
   } catch (e) {

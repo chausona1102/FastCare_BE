@@ -29,6 +29,26 @@ const sendVerifyEmail = async (email, token) => {
   });
 };
 
+const sendReturnDecisionEmail = async ({ email, name, orderCode, status, reason, instructions, deadline }) => {
+  const approved = status === "return_approved";
+  const decisionText = approved ? "đã được duyệt" : "đã bị từ chối";
+  const details = approved
+    ? `${instructions}\nHạn mang sản phẩm đến: ${new Date(deadline).toLocaleString("vi-VN")}`
+    : `Lý do từ chối: ${reason}`;
+  await transporter.sendMail({
+    from: `"FastCare" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: `Cập nhật yêu cầu trả hàng đơn ${orderCode}`,
+    text: [
+      `Xin chào ${name || "Quý khách"},`,
+      `Yêu cầu trả hàng cho đơn ${orderCode} ${decisionText}.`,
+      details,
+      "Quý khách có thể xem lại thông tin trong mục Đơn hàng của tôi trên FastCare.",
+    ].join("\n\n"),
+  });
+};
+
 module.exports = {
   sendVerifyEmail,
+  sendReturnDecisionEmail,
 };

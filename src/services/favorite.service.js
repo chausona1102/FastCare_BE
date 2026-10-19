@@ -19,7 +19,7 @@ const createFavorite = async (user, product) => {
 
 const getAllByUser = async (user) => {
   checkObjectID(user, "Mã khách hàng không hợp lệ");
-  const result = await Favorite.find({ user });
+  const result = await Favorite.find({ user }).populate("product");
   return result;
 };
 

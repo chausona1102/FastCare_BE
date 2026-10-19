@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middlewares/upload.middleware");
 const { verifyToken, verifyStaff } = require("../middlewares/auth.middleware");
+const auditLog = require("../middlewares/auditLog.middleware");
 const {
   createProduct,
   getAllProductWithDeleted,
@@ -25,6 +26,7 @@ router.post(
   ]),
   verifyToken,
   verifyStaff,
+  auditLog({ action: "Tạo sản phẩm", target: "Product" }),
   createProduct
 );
 router.get("/", getProducts);
@@ -43,9 +45,22 @@ router.patch(
   ]),
   verifyToken,
   verifyStaff,
+  auditLog({ action: "Cập nhật sản phẩm", target: "Product" }),
   updateProduct
 );
-router.delete("/:id", verifyToken, verifyStaff, deleteProduct);
-router.delete("/restore/:id", verifyToken, verifyStaff, restoreProduct);
+router.delete(
+  "/:id",
+  verifyToken,
+  verifyStaff,
+  auditLog({ action: "Xóa sản phẩm", target: "Product" }),
+  deleteProduct
+);
+router.delete(
+  "/restore/:id",
+  verifyToken,
+  verifyStaff,
+  auditLog({ action: "Khôi phục sản phẩm", target: "Product" }),
+  restoreProduct
+);
 
 module.exports = router;

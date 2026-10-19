@@ -44,7 +44,7 @@ const getFaroviteByUserAndProduct = async (req, res) => {
 
 const deleteFavorite = async (req, res) => {
   try {
-    const result = favoriteService.deleteFavorite(
+    const result = await favoriteService.deleteFavorite(
       req.user.id,
       req.body["product"]
     );

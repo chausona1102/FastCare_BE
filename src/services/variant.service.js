@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Variant = require("../models/variant.model");
+const Product = require("../models/product.model");
 
 const createVariant = async ({
   product,
@@ -29,8 +30,31 @@ const getAllVariant = async () => {
   return await Variant.find();
 };
 
-const getAllVariantWithDelete = async () => {
-  return await Variant.find({ deleteAt: null });
+const getAllVariantWithDelete = async (search = "", status = "") => {
+  const filters = [];
+  const normalizedSearch = String(search || "").trim();
+  const normalizedStatus = String(status || "").trim();
+
+  if (normalizedStatus === "active") filters.push({ deleteAt: null });
+  if (normalizedStatus === "deleted") filters.push({ deleteAt: { $ne: null } });
+  if (normalizedSearch) {
+    const escapedSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegex = new RegExp(escapedSearch, "i");
+    const matchingProducts = await Product.find({ title: searchRegex }).distinct("_id");
+    filters.push({
+      $or: [
+        { sku: searchRegex },
+        { storage: searchRegex },
+        { colors: searchRegex },
+        { product: { $in: matchingProducts } },
+      ],
+    });
+  }
+
+  const query = filters.length ? { $and: filters } : {};
+  return await Variant.find(query)
+    .populate({ path: "product", select: "title deletedAt" })
+    .sort({ createdAt: -1 });
 };
 
 const getVariantByProductId = async (product) => {

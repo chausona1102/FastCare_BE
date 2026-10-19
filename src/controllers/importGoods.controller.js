@@ -1,12 +1,30 @@
 const importService = require("../services/importGoods.service");
 
-const updateQuantity = async (req, res) => {
+const createImport = async (req, res) => {
   try {
-    const result = await importService.updateQuantity(req.body);
+    const result = await importService.createImport(req.body, req.user._id);
+    res.status(201).json(result);
+  } catch (e) {
+    res.status(e.statusCode || 400).json({ message: e.message });
+  }
+};
+
+const getImports = async (req, res) => {
+  try {
+    const result = await importService.getImports(req.query.limit);
     res.status(200).json(result);
   } catch (e) {
     res.status(e.statusCode || 400).json({ message: e.message });
   }
 };
 
-module.exports = { updateQuantity };
+const updateQuantity = async (req, res) => {
+  try {
+    const result = await importService.updateQuantity(req.body, req.user._id);
+    res.status(200).json(result);
+  } catch (e) {
+    res.status(e.statusCode || 400).json({ message: e.message });
+  }
+};
+
+module.exports = { createImport, getImports, updateQuantity };

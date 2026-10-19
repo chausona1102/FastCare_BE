@@ -4,12 +4,22 @@ const { uploadMultipleImage } = require("../utils/cloudinary");
 const createFeedback = async (req, res) => {
   try {
     let imageUrls = [];
-    if (req.files["images"] && req.files["images"].length > 0) {
+    if (req.files && req.files["images"] && req.files["images"].length > 0) {
       imageUrls = await uploadMultipleImage(req.files["images"]);
+    }
+
+    let parsedFeedbackTags = req.body.feedbackTags;
+    if (typeof parsedFeedbackTags === "string") {
+      try {
+        parsedFeedbackTags = JSON.parse(parsedFeedbackTags);
+      } catch (error) {
+        parsedFeedbackTags = {};
+      }
     }
 
     const result = await feedbackService.createFeedback({
       ...req.body,
+      feedbackTags: parsedFeedbackTags || {},
       user: req.user.id,
       images: imageUrls,
     });

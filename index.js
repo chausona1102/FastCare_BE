@@ -30,10 +30,15 @@ const cartRoute = require("./src/routes/cart.route");
 const cartItemRoute = require("./src/routes/cartItem.route");
 const shopRoute = require("./src/routes/shop.route");
 const orderRoute = require("./src/routes/order.route");
+const paymentRoute = require("./src/routes/payment.route");
 const webhookRoute = require("./src/routes/webhook.route");
 const permissionRoute = require("./src/routes/permission.route");
 const importGoodRoute = require("./src/routes/importGoods.route");
 const userRoute = require("./src/routes/user.route");
+const reportRoute = require("./src/routes/report.route");
+const logRoute = require("./src/routes/log.route");
+const chatbotRoute = require("./src/routes/chatbot.route");
+const rankRoute = require("./src/routes/rank.route");
 
 // mount routes
 app.use("/api/auth", authRoute);
@@ -48,10 +53,15 @@ app.use("/api/cart", cartRoute);
 app.use("/api/cartitem", cartItemRoute);
 app.use("/api/shop", shopRoute);
 app.use("/api/order", orderRoute);
+app.use("/api/payment", paymentRoute);
 app.use("/api/webhook", webhookRoute);
 app.use("/api/permission", permissionRoute);
 app.use("/api/import", importGoodRoute);
 app.use("/api/user", userRoute);
+app.use("/api/report", reportRoute);
+app.use("/api/log", logRoute);
+app.use("/api/chatbot", chatbotRoute);
+app.use("/api/rank", rankRoute);
 
 app.get("/", (req, res) => {
   res.send("FastCare API running");

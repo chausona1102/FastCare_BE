@@ -1,0 +1,43 @@
+{
+  "name": "be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chausona1102/FastCare_BE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/chausona1102/FastCare_BE/issues"
+  },
+  "homepage": "https://github.com/chausona1102/FastCare_BE#readme",
+  "dependencies": {
+    "@google/genai": "^2.30.0",
+    "axios": "^1.19.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.5.0",
+    "mongoose": "^9.8.0",
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.3",
+    "qs": "^6.16.1",
+    "slugify": "^1.6.9"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

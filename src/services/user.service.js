@@ -85,19 +85,32 @@ const createUser = async ({ username, email, fullname, phone, password, role }) 
   return toSafeUser(user);
 };
 
-const getManagedUser = async (userId) => {
+const getManagedUser = async (userId, requiredRole = "") => {
   checkObjectID(userId, "Mã người dùng không hợp lệ");
-  const user = await User.findOne({
+  const query = {
     _id: userId,
     role: { $ne: "admin" },
     isDeleted: { $ne: true },
-  });
+  };
+  if (requiredRole) query.role = requiredRole;
+  const user = await User.findOne(query);
   if (!user) throw new AppError("Người dùng không tồn tại", 404);
   return user;
 };
 
-const updateUser = async (userId, { username, email, fullname, phone }) => {
-  const user = await getManagedUser(userId);
+const getManagedCustomer = async (userId) => {
+  checkObjectID(userId, "Mã người dùng không hợp lệ");
+  const user = await User.findOne({
+    _id: userId,
+    role: "customer",
+    isDeleted: { $ne: true },
+  });
+  if (!user) throw new AppError("Không tìm thấy khách hàng có thể quản lý", 404);
+  return user;
+};
+
+const updateUser = async (userId, { username, email, fullname, phone }, requiredRole = "") => {
+  const user = await getManagedUser(userId, requiredRole);
   const normalizedUsername = String(username || "").trim();
   const normalizedEmail = String(email || "").trim().toLowerCase();
   const normalizedFullname = String(fullname || "").trim();
@@ -149,6 +162,31 @@ const toggleLockAccount = async (userId) => {
   return toSafeUser(user);
 };
 
+const getStaffManagedUsers = (limit, search) =>
+  getUsers(limit, search, "customer");
+
+const createStaffManagedUser = (data) =>
+  createUser({ ...data, role: "customer" });
+
+const updateStaffManagedUser = async (userId, data) => {
+  return updateUser(userId, data, "customer");
+};
+
+const softDeleteStaffManagedUser = async (userId) => {
+  const user = await getManagedCustomer(userId);
+  user.isDeleted = true;
+  user.isActive = false;
+  await user.save();
+  return { message: "Đã xóa mềm tài khoản", user: toSafeUser(user) };
+};
+
+const toggleStaffManagedUser = async (userId) => {
+  const user = await getManagedCustomer(userId);
+  user.isActive = !user.isActive;
+  await user.save();
+  return toSafeUser(user);
+};
+
 // Hàm lock cho User - gửi mail xác nhận
 // const lockAccount = async (userId) => {
 //   checkObjectID(user, "Mã người dùng không hợp lệ");
@@ -172,4 +210,9 @@ module.exports = {
   changeUserRole,
   softDeleteUser,
   toggleLockAccount,
+  getStaffManagedUsers,
+  createStaffManagedUser,
+  updateStaffManagedUser,
+  softDeleteStaffManagedUser,
+  toggleStaffManagedUser,
 };
