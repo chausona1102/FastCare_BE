@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const {
   createOrder,
+  createInStoreOrder,
   confirmOrder,
   confirmDelivery,
   getAllOrders,
@@ -16,6 +17,7 @@ const {
   completeReturn,
   expireReturn,
   cancelOrder,
+  rejectOrder,
 } = require("../controllers/order.controller");
 const { verifyToken, verifyStaff } = require("../middlewares/auth.middleware");
 const auditLog = require("../middlewares/auditLog.middleware");
@@ -27,6 +29,13 @@ router.post(
   auditLog({ action: "Tạo đơn hàng", target: "Order" }),
   createOrder
 );
+router.post(
+  "/in-store",
+  verifyToken,
+  verifyStaff,
+  auditLog({ action: "Tạo phiếu bán tại cửa hàng", target: "Order" }),
+  createInStoreOrder
+);
 router.get("/", verifyToken, verifyStaff, getAllOrders);
 router.put(
   "/confirm/:id",
@@ -34,6 +43,13 @@ router.put(
   verifyStaff,
   auditLog({ action: "Xác nhận đơn hàng", target: "Order" }),
   confirmOrder
+);
+router.put(
+  "/reject/:id",
+  verifyToken,
+  verifyStaff,
+  auditLog({ action: "Từ chối đơn hàng", target: "Order" }),
+  rejectOrder
 );
 router.put(
   "/received/:id",

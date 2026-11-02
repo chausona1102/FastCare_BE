@@ -2,11 +2,19 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
+    source: {
+      type: String,
+      enum: ["online", "in_store"],
+      default: "online",
+    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: function () {
+        return this.source !== "in_store";
+      },
       ref: "User",
     },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     shop: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -15,8 +23,19 @@ const orderSchema = new mongoose.Schema(
     ghnOrderCode: { type: String },
     clientOrderCode: { type: String, required: true },
     status: { type: String, required: true },
+    stockDeducted: { type: Boolean, default: false },
+    cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     confirmationInProgress: { type: Boolean, default: false },
-    paymentTypeId: { type: Number, required: true },
+    paymentTypeId: {
+      type: Number,
+      required: function () {
+        return this.source !== "in_store";
+      },
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["vnpay", "cod", "cash", "bank_transfer"],
+    },
     paymentStatus: {
       type: String,
       enum: ["not_required", "pending", "paid", "failed"],
@@ -26,13 +45,33 @@ const orderSchema = new mongoose.Schema(
     paymentTransactionNo: { type: String },
     paymentBankCode: { type: String },
     paidAt: { type: Date },
-    requiredNote: { type: String, required: true },
+    requiredNote: {
+      type: String,
+      required: function () {
+        return this.source !== "in_store";
+      },
+    },
     note: { type: String },
     toName: { type: String, required: true },
     toPhone: { type: String, required: true },
-    toAddress: { type: String, required: true },
-    toWardCode: { type: String, required: true },
-    toDistrictId: { type: Number, required: true },
+    toAddress: {
+      type: String,
+      required: function () {
+        return this.source !== "in_store";
+      },
+    },
+    toWardCode: {
+      type: String,
+      required: function () {
+        return this.source !== "in_store";
+      },
+    },
+    toDistrictId: {
+      type: Number,
+      required: function () {
+        return this.source !== "in_store";
+      },
+    },
     returnPhone: { type: String },
     returnAddress: { type: String },
     codeAmount: { type: Number, default: 0 },
@@ -72,6 +111,12 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ status: 1, createdAt: -1 });
+orderSchema.index({ clientOrderCode: 1 });
+orderSchema.index({ ghnOrderCode: 1 }, { sparse: true });
+orderSchema.index({ paymentTxnRef: 1 }, { sparse: true });
 
 const Order = mongoose.model("Order", orderSchema);
 

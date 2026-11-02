@@ -13,6 +13,15 @@ const createOrder = async (req, res) => {
   }
 };
 
+const createInStoreOrder = async (req, res) => {
+  try {
+    const order = await orderService.createInStoreOrder(req.user.id, req.body);
+    res.status(201).json(order);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
 const handleVnpayReturn = async (req, res) => {
   try {
     const payment = vnpayService.verifyPaymentReturn(req.query);
@@ -235,7 +244,19 @@ const cancelOrder = async (req, res) => {
   try {
     const updatedOrder = await orderService.cancelOrder({
       orderId: req.params.id,
-      orderCode: req.params.orderCode || req.params.id,
+      userId: req.user.id,
+    });
+    res.status(200).json(updatedOrder);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+};
+
+const rejectOrder = async (req, res) => {
+  try {
+    const updatedOrder = await orderService.rejectOrder({
+      orderId: req.params.id,
+      staffId: req.user.id,
     });
     res.status(200).json(updatedOrder);
   } catch (e) {
@@ -245,6 +266,7 @@ const cancelOrder = async (req, res) => {
 
 module.exports = {
   createOrder,
+  createInStoreOrder,
   handleVnpayReturn,
   handleVnpayIpn,
   confirmOrder,
@@ -262,4 +284,5 @@ module.exports = {
   completeReturn,
   expireReturn,
   cancelOrder,
+  rejectOrder,
 };

@@ -31,4 +31,7 @@ const reportSchema = new mongoose.Schema(
   { collection: "reports", timestamps: false }
 );
 
+reportSchema.index({ type: 1, startDate: -1, _id: -1 });
+reportSchema.index({ type: 1, year: 1, month: 1, startDate: 1 });
+
 module.exports = mongoose.model("Report", reportSchema);

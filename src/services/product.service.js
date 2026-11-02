@@ -57,11 +57,12 @@ const SPECIFICATION_FIELDS_BY_TYPE = {
 };
 
 const getProductTypeForCategory = async (categoryId) => {
-  const category = await Category.findById(categoryId).populate("parentCategory");
+  const category =
+    await Category.findById(categoryId).populate("parentCategory");
   const categorySlug = category?.parentCategory?.slug;
   const categoryType = {
     "dien-thoai": "phone",
-    "laptop": "laptop",
+    laptop: "laptop",
     "phu-kien": "accessory",
   }[categorySlug];
 
@@ -141,7 +142,12 @@ const createProduct = async (data) => {
   return product;
 };
 
-const getAllProductWithDeleted = async (search = "", status = "", skip = 0, limit = 50) => {
+const getAllProductWithDeleted = async (
+  search = "",
+  status = "",
+  skip = 0,
+  limit = 50,
+) => {
   const filters = [];
   const normalizedSearch = String(search || "").trim();
   const normalizedStatus = String(status || "").trim();
@@ -156,11 +162,17 @@ const getAllProductWithDeleted = async (search = "", status = "", skip = 0, limi
   }
 
   if (normalizedStatus === "active") filters.push({ deletedAt: null });
-  if (normalizedStatus === "deleted") filters.push({ deletedAt: { $ne: null } });
+  if (normalizedStatus === "deleted")
+    filters.push({ deletedAt: { $ne: null } });
   if (normalizedSearch) {
-    const escapedSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedSearch = normalizedSearch.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&",
+    );
     const searchRegex = new RegExp(escapedSearch, "i");
-    const matchingCategories = await Category.find({ name: searchRegex }).distinct("_id");
+    const matchingCategories = await Category.find({
+      name: searchRegex,
+    }).distinct("_id");
     filters.push({
       $or: [
         { title: searchRegex },
@@ -189,10 +201,12 @@ const searchProducts = async (keyword = "", limit = 50) => {
   const sanitizedKeyword = String(keyword).trim();
 
   if (!sanitizedKeyword) {
-    return await Product.find({ deletedAt: null }).limit(Number(limit)).populate({
-      path: "category",
-      populate: { path: "parentCategory" },
-    });
+    return await Product.find({ deletedAt: null })
+      .limit(Number(limit))
+      .populate({
+        path: "category",
+        populate: { path: "parentCategory" },
+      });
   }
 
   const safeKeyword = sanitizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -209,17 +223,20 @@ const searchProducts = async (keyword = "", limit = 50) => {
   return await Product.find({
     deletedAt: null,
     $or: [
+      // { _id: { $regex: regex } },
       { title: { $regex: regex } },
       { brand: { $regex: regex } },
       ...["phone", "laptop"].flatMap((type) =>
         ["displayTech", "os", "chipset", "cpu", "gpu"].map((field) => ({
           [`specifications.${type}.${field}`]: { $regex: regex },
-        }))
+        })),
       ),
       ...SPECIFICATION_FIELDS_BY_TYPE.accessory.map((field) => ({
         [`specifications.accessory.${field}`]: { $regex: regex },
       })),
-      ...LEGACY_SPECIFICATION_FIELDS.filter((field) => field !== "screenSize").map((field) => ({
+      ...LEGACY_SPECIFICATION_FIELDS.filter(
+        (field) => field !== "screenSize",
+      ).map((field) => ({
         [field]: { $regex: regex },
       })),
       ...numericSearchConditions,
@@ -239,8 +256,10 @@ const getProductsWithLimit = async (n = 200) => {
 };
 
 const getHotProductWithLimit = async (n = 20) => {
-  return await Product.find({deletedAt: null}).sort({ sold: -1}).limit(Number(n));
-}
+  return await Product.find({ deletedAt: null })
+    .sort({ sold: -1 })
+    .limit(Number(n));
+};
 
 const getProductsWithLimitAndDeleted = async (n = 200) => {
   return await Product.find().sort({ createdAt: -1 }).limit(Number(n));
@@ -319,7 +338,10 @@ const updateProduct = async (id, data) => {
   if (!PRODUCT_TYPES.includes(productType))
     throw new Error("Không xác định được loại sản phẩm từ danh mục");
   if (data.title) {
-    const existed = await Product.findOne({ title: data.title, _id: { $ne: id } });
+    const existed = await Product.findOne({
+      title: data.title,
+      _id: { $ne: id },
+    });
     if (existed) throw new Error("Đã có sản phẩm cùng tên");
   }
   const updateData = { ...data, productType };
@@ -332,10 +354,10 @@ const updateProduct = async (id, data) => {
     {
       $set: updateData,
       $unset: Object.fromEntries(
-        LEGACY_SPECIFICATION_FIELDS.map((field) => [field, ""])
+        LEGACY_SPECIFICATION_FIELDS.map((field) => [field, ""]),
       ),
     },
-    { returnDocument: "after", runValidators: true }
+    { returnDocument: "after", runValidators: true },
   );
   if (!updated) throw new Error("Cập nhật thất bại");
   return updated;
@@ -353,7 +375,7 @@ const deleteProduct = async (id) => {
     {
       $set: { deletedAt: Date.now() },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
   if (!deleted) throw new Error("Xóa sản phẩm thất bại");
   return deleted;
@@ -372,7 +394,7 @@ const restoreProduct = async (id) => {
     {
       $set: { deletedAt: null },
     },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
   if (!restored) throw new Error("Khôi phục sản phẩm thất bại");
   return restored;
@@ -393,5 +415,5 @@ module.exports = {
   getProductsWithLimit,
   getProductsWithLimitAndDeleted,
   getHotProductWithLimit,
-  searchProducts
+  searchProducts,
 };

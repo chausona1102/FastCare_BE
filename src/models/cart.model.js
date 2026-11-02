@@ -8,8 +8,10 @@ const cartSchema = new mongoose.Schema(
       ref: "User",
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+cartSchema.index({ user: 1 }, { unique: true });
 
 const Cart = mongoose.model("Cart", cartSchema);
 

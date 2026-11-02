@@ -1,3 +1,4 @@
+require("dns").setDefaultResultOrder("ipv4first");
 const express = require("express");
 const dotenv = require("dotenv");
 dotenv.config();
@@ -14,7 +15,7 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-  })
+  }),
 );
 
 // routes
@@ -39,6 +40,12 @@ const reportRoute = require("./src/routes/report.route");
 const logRoute = require("./src/routes/log.route");
 const chatbotRoute = require("./src/routes/chatbot.route");
 const rankRoute = require("./src/routes/rank.route");
+const behaviorRoute = require("./src/routes/behavior.route");
+const visitRoute = require("./src/routes/visit.route");
+const recommendRoute = require("./src/routes/recommend.route");
+const voucherRoute = require("./src/routes/voucher.route");
+const userVoucherRoute = require("./src/routes/userVoucher.route");
+const trafficRoute = require("./src/routes/traffic.route");
 
 // mount routes
 app.use("/api/auth", authRoute);
@@ -62,6 +69,12 @@ app.use("/api/report", reportRoute);
 app.use("/api/log", logRoute);
 app.use("/api/chatbot", chatbotRoute);
 app.use("/api/rank", rankRoute);
+app.use("/api/behavior", behaviorRoute);
+app.use("/api/visited", visitRoute);
+app.use("/api/recommend", recommendRoute);
+app.use("/api/voucher", voucherRoute);
+app.use("/api/user-voucher", userVoucherRoute);
+app.use("/api/traffic", trafficRoute);
 
 app.get("/", (req, res) => {
   res.send("FastCare API running");

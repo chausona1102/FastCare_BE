@@ -27,4 +27,21 @@ const updateQuantity = async (req, res) => {
   }
 };
 
-module.exports = { createImport, getImports, updateQuantity };
+const setMissingUnitCost = async (req, res) => {
+  try {
+    const record = await importService.setMissingUnitCost(
+      req.params.id,
+      req.body.unitCost,
+    );
+    res.status(200).json(record);
+  } catch (e) {
+    res.status(e.statusCode || 400).json({ message: e.message });
+  }
+};
+
+module.exports = {
+  createImport,
+  getImports,
+  updateQuantity,
+  setMissingUnitCost,
+};

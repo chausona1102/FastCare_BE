@@ -16,6 +16,9 @@ const favoriteSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+favoriteSchema.index({ user: 1, product: 1 }, { unique: true });
+favoriteSchema.index({ product: 1 });
+
 const Favorite = mongoose.model("Favorite", favoriteSchema);
 
 module.exports = Favorite;

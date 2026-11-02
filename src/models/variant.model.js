@@ -18,6 +18,9 @@ const variantSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+variantSchema.index({ product: 1, deleteAt: 1 });
+variantSchema.index({ createdAt: -1 });
+
 const Variant = mongoose.model("Variant", variantSchema);
 
 module.exports = Variant;

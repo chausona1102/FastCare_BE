@@ -3,16 +3,13 @@ const CartItem = require("../models/cartItem.model");
 const Cart = require("../models/cart.model");
 
 /**
- * Thêm item vào giỏ. Nếu cùng cart + product + variant đã tồn tại
+ * Thêm item vào giỏ. Nếu cùng cart + variant + color đã tồn tại
  * thì cộng dồn quantity thay vì tạo bản ghi mới (tránh trùng lặp).
  */
-const createCartItem = async (user, {
-  product,
-  variant,
-  color,
-  currentPrice,
-  quantity,
-}) => {
+const createCartItem = async (
+  user,
+  { product, variant, color, currentPrice, quantity },
+) => {
   checkObjectID(product, "Product không hợp lệ");
   checkObjectID(variant, "Variant không hợp lệ");
 
@@ -22,7 +19,7 @@ const createCartItem = async (user, {
 
   const cart = await Cart.findOne({ user });
 
-  const existed = await CartItem.findOne({ cart, product, variant });
+  const existed = await CartItem.findOne({ cart, variant, color });
 
   if (existed) {
     existed.quantity += quantity;
@@ -57,7 +54,7 @@ const updateCartItemQuantity = async (id, quantity) => {
   const updated = await CartItem.findByIdAndUpdate(
     id,
     { quantity },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
   if (!updated) throw new Error("Cập nhật cart item thất bại");
   return updated;
@@ -75,14 +72,14 @@ const deletedMultipleCartItems = async (itemIds) => {
     throw new Error("Danh sách itemIds không hợp lệ");
   }
   const deleted = await CartItem.deleteMany({ _id: { $in: itemIds } });
-  if(deleted.deletedCount === 0) throw new Error("Xóa cart items thất bại");
+  if (deleted.deletedCount === 0) throw new Error("Xóa cart items thất bại");
   return deleted;
-}
+};
 
 module.exports = {
   createCartItem,
   getCartItemsOfCart,
   updateCartItemQuantity,
   deleteCartItem,
-  deletedMultipleCartItems
+  deletedMultipleCartItems,
 };

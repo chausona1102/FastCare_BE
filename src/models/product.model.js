@@ -100,6 +100,11 @@ const productSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+productSchema.index({ category: 1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ deletedAt: 1, createdAt: -1 });
+productSchema.index({ deletedAt: 1, sold: -1 });
+
 const Product = mongoose.model("Product", productSchema);
 
 module.exports = Product;

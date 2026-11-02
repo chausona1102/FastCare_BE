@@ -38,11 +38,17 @@ const getAllVariantWithDelete = async (search = "", status = "") => {
   if (normalizedStatus === "active") filters.push({ deleteAt: null });
   if (normalizedStatus === "deleted") filters.push({ deleteAt: { $ne: null } });
   if (normalizedSearch) {
-    const escapedSearch = normalizedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedSearch = normalizedSearch.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&",
+    );
     const searchRegex = new RegExp(escapedSearch, "i");
-    const matchingProducts = await Product.find({ title: searchRegex }).distinct("_id");
+    const matchingProducts = await Product.find({
+      title: searchRegex,
+    }).distinct("_id");
     filters.push({
       $or: [
+        // { _id: searchRegex },
         { sku: searchRegex },
         { storage: searchRegex },
         { colors: searchRegex },
@@ -53,7 +59,7 @@ const getAllVariantWithDelete = async (search = "", status = "") => {
 
   const query = filters.length ? { $and: filters } : {};
   return await Variant.find(query)
-    .populate({ path: "product", select: "title deletedAt" })
+    .populate({ path: "product", select: "title deletedAt discount" })
     .sort({ createdAt: -1 });
 };
 
@@ -73,7 +79,7 @@ const updateVariant = async (id, data) => {
   const updated = await Variant.findByIdAndUpdate(
     id,
     { $set: data },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
   if (!updated) throw new Error("Cập nhật thất bại");
   return updated;
@@ -88,7 +94,7 @@ const deleteVariant = async (id) => {
   const deleted = await Variant.findByIdAndUpdate(
     id,
     { deleteAt: Date.now() },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
   if (!deleted) throw new Error("Xóa thất bại");
   return deleted;
@@ -102,7 +108,7 @@ const restoreVariant = async (id) => {
   const deleted = await Variant.findByIdAndUpdate(
     id,
     { deleteAt: null },
-    { returnDocument: "after" }
+    { returnDocument: "after" },
   );
   if (!deleted) throw new Error("Khôi phục thất bại");
   return deleted;

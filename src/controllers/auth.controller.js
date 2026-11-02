@@ -70,6 +70,30 @@ const logout = async (req, res) => {
   }
 };
 
+const getActiveRefreshTokens = async (req, res) => {
+  try {
+    const result = await authService.getActiveRefreshTokens({
+      search: req.query.search,
+      dateFrom: req.query.dateFrom,
+      dateTo: req.query.dateTo,
+      page: req.query.page,
+      limit: req.query.limit,
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(err.statusCode || 400).json({ message: err.message });
+  }
+};
+
+const revokeRefreshToken = async (req, res) => {
+  try {
+    const result = await authService.revokeRefreshToken(req.params.id);
+    res.json(result);
+  } catch (err) {
+    res.status(err.statusCode || 400).json({ message: err.message });
+  }
+};
+
 const verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
@@ -91,4 +115,14 @@ const resendVerify = async (req, res) => {
   }
 };
 
-module.exports = { signup, login, verifyEmail, resendVerify, refresh, logout, getMe };
+module.exports = {
+  signup,
+  login,
+  verifyEmail,
+  resendVerify,
+  refresh,
+  logout,
+  getMe,
+  getActiveRefreshTokens,
+  revokeRefreshToken,
+};

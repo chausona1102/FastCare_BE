@@ -14,7 +14,9 @@ const importGoodsSchema = new mongoose.Schema(
     },
     sku: { type: String, default: "" },
     quantity: { type: Number, required: true, min: 1 },
-    unitCost: { type: Number, default: null, min: 0 },
+    unitCost: { type: Number, required: true, min: 0 },
+    effectiveAt: { type: Date },
+    isBackfill: { type: Boolean, default: false },
     supplier: { type: String, trim: true, maxlength: 120, default: "" },
     note: { type: String, trim: true, maxlength: 500, default: "" },
     importedBy: {
@@ -23,7 +25,10 @@ const importGoodsSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+importGoodsSchema.index({ variant: 1, effectiveAt: 1 });
+importGoodsSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("ImportGoods", importGoodsSchema);

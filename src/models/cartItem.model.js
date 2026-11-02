@@ -24,8 +24,10 @@ const cartItemSchema = new mongoose.Schema(
     currentPrice: { type: Number, required: true },
     quantity: { type: Number, required: true },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+cartItemSchema.index({ cart: 1, variant: 1, color: 1 }, { unique: true });
 
 const CartItem = mongoose.model("CartItem", cartItemSchema);
 

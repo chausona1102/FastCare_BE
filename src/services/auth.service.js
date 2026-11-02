@@ -1,23 +1,24 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 const User = require("../models/user.model");
 const RefreshToken = require("../models/refreshToken.model");
-const { sendVerifyEmail } = require("../utils/mailer");
+const { sendVerifyEmail, sendLoginNotification } = require("../utils/mailer");
 const AppError = require("../utils/AppError");
 
 const generateRefreshToken = (user, date) =>
   jwt.sign(
     { id: user._id, email: user.email, role: user.role },
-    process.env.JWT_REFRESH_SECRET, 
-    { expiresIn: `${date}d` }
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: `${date}d` },
   );
 
 const generateAccessToken = (user) =>
   jwt.sign(
     { id: user._id, email: user.email, role: user.role },
-    process.env.JWT_ACCESS_SECRET, 
-    { expiresIn: `15m` }
+    process.env.JWT_ACCESS_SECRET,
+    { expiresIn: `15m` },
   );
 
 const signup = async ({
@@ -96,14 +97,17 @@ const login = async ({ email, password, deviceInfo, ipAddress }) => {
 
   const refreshToken = generateRefreshToken(user, 30);
   const accessToken = generateAccessToken(user);
-  const tokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
 
   await RefreshToken.create({
     user: user._id,
     tokenHash,
     deviceInfo,
     ipAddress,
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
 
   return {
@@ -125,17 +129,21 @@ const refreshAccessToken = async (refreshToken) => {
   if (!refreshToken) throw new AppError("Không có refresh token", 401);
 
   let payload;
-  try { 
+  try {
     payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
   } catch (err) {
     throw new AppError("Refresh token không hợp lệ hoặc hết hạn", 401);
   }
 
-  const tokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
   const storedToken = await RefreshToken.findOne({
     user: payload.id,
     tokenHash,
     expiresAt: { $gt: new Date() },
+    revoked: { $ne: true },
   });
 
   if (!storedToken) throw new AppError("Refresh token đã bị thu hồi", 401);
@@ -146,7 +154,10 @@ const refreshAccessToken = async (refreshToken) => {
 
   const newAccessToken = generateAccessToken(user);
   const newRefreshToken = generateRefreshToken(user, 30);
-  const newTokenHash = crypto.createHash("sha256").update(newRefreshToken).digest("hex");
+  const newTokenHash = crypto
+    .createHash("sha256")
+    .update(newRefreshToken)
+    .digest("hex");
 
   await RefreshToken.deleteOne({ _id: storedToken._id });
   await RefreshToken.create({
@@ -161,8 +172,11 @@ const refreshAccessToken = async (refreshToken) => {
 };
 
 const getMe = async (userId) => {
-  const user = await User.findById(userId).select("-password -verifyToken -verifyTokenExpires");
-  if (!user || user.isDeleted) throw new AppError("Người dùng không tồn tại", 404);
+  const user = await User.findById(userId).select(
+    "-password -verifyToken -verifyTokenExpires",
+  );
+  if (!user || user.isDeleted)
+    throw new AppError("Người dùng không tồn tại", 404);
 
   return {
     id: user._id,
@@ -175,12 +189,128 @@ const getMe = async (userId) => {
   };
 };
 
-
 const logout = async (refreshToken) => {
   if (!refreshToken) return { message: "Đã đăng xuất" };
-  const tokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex");
+  const tokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
   await RefreshToken.deleteOne({ tokenHash });
   return { message: "Đã đăng xuất" };
 };
 
-module.exports = { signup, login, verifyEmail, resendVerify, refreshAccessToken, getMe, logout };
+const getActiveRefreshTokens = async ({
+  search = "",
+  dateFrom = "",
+  dateTo = "",
+  page = 1,
+  limit = 20,
+} = {}) => {
+  const parsedPage = Number(page);
+  const parsedLimit = Number(limit);
+  if (!Number.isInteger(parsedPage) || parsedPage < 1) {
+    throw new AppError("Trang refresh token không hợp lệ");
+  }
+  if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+    throw new AppError("Số lượng refresh token không hợp lệ");
+  }
+
+  const parseDate = (value, label) => {
+    if (!value) return null;
+    if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      throw new AppError(`${label} không hợp lệ`);
+    }
+    const dateOnly = new Date(`${value}T00:00:00.000Z`);
+    if (
+      Number.isNaN(dateOnly.getTime()) ||
+      dateOnly.toISOString().slice(0, 10) !== value
+    ) {
+      throw new AppError(`${label} không hợp lệ`);
+    }
+    return new Date(`${value}T00:00:00+07:00`);
+  };
+  const start = parseDate(dateFrom, "Ngày bắt đầu");
+  const end = parseDate(dateTo, "Ngày kết thúc");
+  if (start && end && start > end) {
+    throw new AppError("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc");
+  }
+
+  const filter = {
+    expiresAt: { $gt: new Date() },
+    revoked: { $ne: true },
+  };
+  if (start || end) {
+    filter.createdAt = {};
+    if (start) filter.createdAt.$gte = start;
+    if (end) {
+      const exclusiveEnd = new Date(end);
+      exclusiveEnd.setUTCDate(exclusiveEnd.getUTCDate() + 1);
+      filter.createdAt.$lt = exclusiveEnd;
+    }
+  }
+
+  const normalizedSearch = String(search || "").trim();
+  if (normalizedSearch) {
+    const escapedSearch = normalizedSearch.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&",
+    );
+    const searchRegex = new RegExp(escapedSearch, "i");
+    const matchingUsers = await User.find({
+      $or: [
+        { fullname: searchRegex },
+        { username: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex },
+      ],
+    }).distinct("_id");
+    const searchConditions = [
+      { deviceInfo: searchRegex },
+      { ipAddress: searchRegex },
+      { user: { $in: matchingUsers } },
+    ];
+    if (mongoose.Types.ObjectId.isValid(normalizedSearch)) {
+      searchConditions.push({
+        user: new mongoose.Types.ObjectId(normalizedSearch),
+      });
+    }
+    filter.$or = searchConditions;
+  }
+
+  const [sessions, total] = await Promise.all([
+    RefreshToken.find(filter)
+      .select("-tokenHash -replacedByTokenHash")
+      .populate({
+        path: "user",
+        select: "fullname username email phone role",
+      })
+      .sort({ createdAt: -1 })
+      .skip((parsedPage - 1) * parsedLimit)
+      .limit(parsedLimit)
+      .lean(),
+    RefreshToken.countDocuments(filter),
+  ]);
+
+  return { sessions, total, page: parsedPage, limit: parsedLimit };
+};
+
+const revokeRefreshToken = async (sessionId) => {
+  if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+    throw new AppError("Mã phiên đăng nhập không hợp lệ");
+  }
+  const session = await RefreshToken.findByIdAndDelete(sessionId);
+  if (!session) throw new AppError("Phiên đăng nhập không tồn tại", 404);
+  return { message: "Đã thu hồi phiên đăng nhập" };
+};
+
+module.exports = {
+  signup,
+  login,
+  verifyEmail,
+  resendVerify,
+  refreshAccessToken,
+  getMe,
+  logout,
+  getActiveRefreshTokens,
+  revokeRefreshToken,
+};

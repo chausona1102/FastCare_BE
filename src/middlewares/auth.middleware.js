@@ -32,6 +32,21 @@ const authenticate = (req, res, next) => {
   }
 };
 
+const optionalAuthenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return next();
+  }
+
+  try {
+    req.user = jwt.verify(authHeader.split(" ")[1], process.env.JWT_ACCESS_SECRET);
+  } catch {
+    req.user = null;
+  }
+
+  return next();
+};
+
 const verifyToken = async (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -59,4 +74,11 @@ const authorize =
 const verifyAdmin = authorize("admin");
 const verifyStaff = authorize("admin", "staff");
 
-module.exports = { verifyToken, verifyAdmin, verifyStaff, getClientInfo, authenticate };
+module.exports = {
+  verifyToken,
+  verifyAdmin,
+  verifyStaff,
+  getClientInfo,
+  authenticate,
+  optionalAuthenticate,
+};

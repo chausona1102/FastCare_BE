@@ -22,6 +22,7 @@ locationSchema.index(
     name: "one_default_location_per_user",
   }
 );
+locationSchema.index({ user: 1, isDefault: -1, createdAt: -1 });
 
 const Location = mongoose.model("Location", locationSchema);
 

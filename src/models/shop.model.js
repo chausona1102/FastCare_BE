@@ -13,6 +13,8 @@ const shopSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+shopSchema.index({ ghnShopId: 1 });
+
 const Shop = mongoose.model("Shop", shopSchema);
 
 module.exports = Shop;

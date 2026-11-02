@@ -10,8 +10,11 @@ const categorySchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+categorySchema.index({ parentCategory: 1, createdAt: -1 });
+categorySchema.index({ createdAt: -1 });
 
 const Category = mongoose.model("Category", categorySchema);
 
