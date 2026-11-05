@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
 const sendVerifyEmail = async (email, token) => {
   // const link = `${process.env.CLIENT_URL}/api/auth/verify-email?token=${token}`;
   const link = `${process.env.CLIENT_URL}/verify-email?token=${token}`;
-  await transporter.sendMail({
+  const sended = await transporter.sendMail({
     from: `"App Support" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Verify your email",
@@ -27,6 +27,7 @@ const sendVerifyEmail = async (email, token) => {
             <p style="color:#888;font-size:12px">Link hết hạn sau 24 giờ.</p>
         `,
   });
+  console.log("Verify email sent:", sended.response);
 };
 
 const sendLoginNotification = async ({
@@ -196,7 +197,7 @@ const sendLoginNotification = async ({
                         style="padding-right: 5px;"
                       >
                         <a
-                          href="${process.env.CLIENT_URL}/security/login-confirm/${refreshTokenId}"
+                          href="${process.env.CLIENT_URL}/"
                           style="
                             display: block;
                             background: #d70018;
@@ -208,7 +209,7 @@ const sendLoginNotification = async ({
                             font-size: 14px;
                           "
                         >
-                          Đó là tôi
+                          Là tôi - Đi đến trang chủ
                         </a>
                       </td>
 
@@ -273,6 +274,117 @@ const sendLoginNotification = async ({
   });
 };
 
+const sendPin = async ({ to, pin }) => {
+  const html = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+
+    <body style="
+      margin: 0;
+      padding: 0;
+      background-color: #f5f6f8;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #333;
+    ">
+      <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="padding: 40px 15px;"
+      >
+        <tr>
+          <td align="center">
+
+            <table
+              width="100%"
+              cellpadding="0"
+              cellspacing="0"
+              style="
+                max-width: 560px;
+                background: #ffffff;
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+              "
+            >
+
+              <!-- Header -->
+              <tr>
+                <td style="
+                  background: #d70018;
+                  padding: 25px;
+                  text-align: center;
+                ">
+                  <div style="
+                    color: #ffffff;
+                    font-size: 26px;
+                    font-weight: bold;
+                  ">
+                    FastCare
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Content -->
+              <tr>
+                <td style="padding: 35px 35px 25px;">
+
+                  <h2 style="
+                    margin: 0 0 12px;
+                    text-align: center;
+                    color: #222;
+                    font-size: 22px;
+                  ">
+                    Mã xác thực của bạn là <span style="color: #d70018; background-color: #f1f1f1; padding: 5px 10px; border-radius: 4px;">${pin}</span>
+                  </h2>
+
+                  <p style="
+                    margin: 0 0 25px;
+                    text-align: center;
+                    color: #666;
+                    font-size: 15px;
+                    line-height: 1.6;
+                  ">
+                    ⚠️ Đây là mã xác thực của bạn. Mã này sẽ hết hạn sau 5 phút kể từ lúc gửi. Vui lòng không chia sẻ mã này với bất kỳ ai. 
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="
+                  padding: 20px 30px;
+                  background: #fafafa;
+                  text-align: center;
+                  color: #999;
+                  font-size: 12px;
+                  line-height: 1.6;
+                ">
+                  Đây là email tự động từ FastCare.<br />
+                  <strong>“Vui lòng không phản hồi!!!”</strong>.
+                </td>
+              </tr>
+
+            </table>
+
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  await transporter.sendMail({
+    to,
+    subject: "Mã xác thực - FastCare",
+    html,
+  });
+};
+
 const sendReturnDecisionEmail = async ({
   email,
   name,
@@ -304,4 +416,5 @@ module.exports = {
   sendVerifyEmail,
   sendReturnDecisionEmail,
   sendLoginNotification,
+  sendPin,
 };

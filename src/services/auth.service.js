@@ -4,7 +4,12 @@ const crypto = require("crypto");
 const mongoose = require("mongoose");
 const User = require("../models/user.model");
 const RefreshToken = require("../models/refreshToken.model");
-const { sendVerifyEmail, sendLoginNotification } = require("../utils/mailer");
+const VerificationPin = require("../models/verificationpin.model");
+const {
+  sendVerifyEmail,
+  sendLoginNotification,
+  sendPin,
+} = require("../utils/mailer");
 const AppError = require("../utils/AppError");
 
 const generateRefreshToken = (user, date) =>
@@ -85,6 +90,157 @@ const resendVerify = async (email) => {
   return { message: "Đã gửi lại email xác thực!" };
 };
 
+const requestPasswordReset = async (email) => {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    throw new AppError("Email không hợp lệ");
+  }
+
+  const user = await User.findOne({
+    email: normalizedEmail,
+    isVerified: true,
+    isDeleted: { $ne: true },
+  });
+  if (!user) {
+    return {
+      message: "Nếu email đã đăng ký, mã PIN sẽ được gửi đến hộp thư của bạn.",
+    };
+  }
+
+  await VerificationPin.deleteMany({
+    user: user._id,
+    purpose: "password_reset",
+  });
+
+  const pin = crypto.randomInt(100000, 1000000).toString();
+  const verificationPin = await VerificationPin.create({
+    user: user._id,
+    pin: await bcrypt.hash(pin, 10),
+    purpose: "password_reset",
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+  });
+
+  try {
+    await sendPin({ to: user.email, pin });
+  } catch (error) {
+    await VerificationPin.deleteOne({ _id: verificationPin._id });
+    throw error;
+  }
+
+  return {
+    message: "Nếu email đã đăng ký, mã PIN sẽ được gửi đến hộp thư của bạn.",
+  };
+};
+
+const verifyPasswordResetPin = async (email, inputPin) => {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const normalizedPin = String(inputPin || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    throw new AppError("Email hoặc mã PIN không hợp lệ");
+  }
+  if (!/^\d{6}$/.test(normalizedPin)) {
+    throw new AppError("Mã PIN phải gồm 6 chữ số");
+  }
+
+  const user = await User.findOne({
+    email: normalizedEmail,
+    isVerified: true,
+    isDeleted: { $ne: true },
+  });
+  if (!user) throw new AppError("Mã PIN không hợp lệ hoặc đã hết hạn");
+
+  const verificationPin = await VerificationPin.findOne({
+    user: user._id,
+    purpose: "password_reset",
+    resetTokenHash: null,
+  }).sort({ createdAt: -1 });
+  if (!verificationPin) {
+    throw new AppError("Mã PIN không hợp lệ hoặc đã hết hạn");
+  }
+
+  if (verificationPin.expiresAt <= new Date()) {
+    await VerificationPin.deleteOne({ _id: verificationPin._id });
+    throw new AppError("Mã PIN đã hết hạn");
+  }
+  if (verificationPin.failedAttempts >= 5) {
+    await VerificationPin.deleteOne({ _id: verificationPin._id });
+    throw new AppError("Mã PIN đã bị khóa");
+  }
+
+  const isValid = await bcrypt.compare(normalizedPin, verificationPin.pin);
+  if (!isValid) {
+    verificationPin.failedAttempts += 1;
+    await verificationPin.save();
+    throw new AppError("Mã PIN không chính xác");
+  }
+
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  verificationPin.resetTokenHash = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  verificationPin.expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await verificationPin.save();
+
+  return { resetToken, message: "Xác thực mã PIN thành công" };
+};
+
+const resetPassword = async (email, resetToken, password) => {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+  const normalizedToken = String(resetToken || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    throw new AppError("Thông tin đặt lại mật khẩu không hợp lệ");
+  }
+  if (typeof password !== "string" || password.length < 6) {
+    throw new AppError("Mật khẩu tối thiểu 6 ký tự");
+  }
+  if (!/^[a-f0-9]{64}$/i.test(normalizedToken)) {
+    throw new AppError("Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
+  }
+
+  const user = await User.findOne({
+    email: normalizedEmail,
+    isVerified: true,
+    isDeleted: { $ne: true },
+  });
+  if (!user) {
+    throw new AppError("Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const resetTokenHash = crypto
+    .createHash("sha256")
+    .update(normalizedToken)
+    .digest("hex");
+  const resetSession = await VerificationPin.findOneAndDelete({
+    user: user._id,
+    purpose: "password_reset",
+    resetTokenHash,
+    expiresAt: { $gt: new Date() },
+  });
+  if (!resetSession) {
+    throw new AppError("Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
+  }
+
+  user.password = hashedPassword;
+  await user.save();
+  await Promise.all([
+    VerificationPin.deleteMany({
+      user: user._id,
+      purpose: "password_reset",
+    }),
+    RefreshToken.deleteMany({ user: user._id }),
+  ]);
+
+  return { message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại." };
+};
+
 const login = async ({ email, password, deviceInfo, ipAddress }) => {
   const user = await User.findOne({ email });
   if (!user) throw new Error("Email không tồn tại");
@@ -102,13 +258,25 @@ const login = async ({ email, password, deviceInfo, ipAddress }) => {
     .update(refreshToken)
     .digest("hex");
 
-  await RefreshToken.create({
+  const refreshSession = await RefreshToken.create({
     user: user._id,
     tokenHash,
     deviceInfo,
     ipAddress,
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
+
+  try {
+    await sendLoginNotification({
+      to: user.email,
+      refreshTokenId: refreshSession._id,
+      deviceInfo,
+      ipAddress,
+      createdAt: refreshSession.createdAt,
+    });
+  } catch (error) {
+    console.error("Failed to send login notification:", error);
+  }
 
   return {
     refreshToken,
@@ -159,14 +327,24 @@ const refreshAccessToken = async (refreshToken) => {
     .update(newRefreshToken)
     .digest("hex");
 
-  await RefreshToken.deleteOne({ _id: storedToken._id });
-  await RefreshToken.create({
-    user: user._id,
-    tokenHash: newTokenHash,
-    deviceInfo: storedToken.deviceInfo,
-    ipAddress: storedToken.ipAddress,
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-  });
+  const rotatedSession = await RefreshToken.findOneAndUpdate(
+    {
+      _id: storedToken._id,
+      tokenHash,
+      expiresAt: { $gt: new Date() },
+      revoked: { $ne: true },
+    },
+    {
+      $set: {
+        tokenHash: newTokenHash,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+    { new: true },
+  );
+  if (!rotatedSession) {
+    throw new AppError("Refresh token đã bị thu hồi", 401);
+  }
 
   return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
@@ -303,14 +481,27 @@ const revokeRefreshToken = async (sessionId) => {
   return { message: "Đã thu hồi phiên đăng nhập" };
 };
 
+const revokeLoginSession = async (sessionId) => {
+  if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+    throw new AppError("Mã phiên đăng nhập không hợp lệ");
+  }
+  const session = await RefreshToken.findByIdAndDelete(sessionId);
+  if (!session) throw new AppError("Phiên đăng nhập không tồn tại", 404);
+  return { message: "Phiên đăng nhập đã được thu hồi" };
+};
+
 module.exports = {
   signup,
   login,
   verifyEmail,
   resendVerify,
+  requestPasswordReset,
+  verifyPasswordResetPin,
+  resetPassword,
   refreshAccessToken,
   getMe,
   logout,
   getActiveRefreshTokens,
   revokeRefreshToken,
+  revokeLoginSession,
 };

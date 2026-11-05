@@ -94,6 +94,15 @@ const revokeRefreshToken = async (req, res) => {
   }
 };
 
+const revokeLoginSession = async (req, res) => {
+  try {
+    const result = await authService.revokeLoginSession(req.params.id);
+    res.json(result);
+  } catch (err) {
+    res.status(err.statusCode || 400).json({ message: err.message });
+  }
+};
+
 const verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
@@ -115,14 +124,52 @@ const resendVerify = async (req, res) => {
   }
 };
 
+const requestPasswordReset = async (req, res) => {
+  try {
+    const result = await authService.requestPasswordReset(req.body.email);
+    res.json(result);
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ message: err.message });
+  }
+};
+
+const verifyPasswordResetPin = async (req, res) => {
+  try {
+    const result = await authService.verifyPasswordResetPin(
+      req.body.email,
+      req.body.pin,
+    );
+    res.json(result);
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ message: err.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const result = await authService.resetPassword(
+      req.body.email,
+      req.body.resetToken,
+      req.body.password,
+    );
+    res.json(result);
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   signup,
   login,
   verifyEmail,
   resendVerify,
+  requestPasswordReset,
+  verifyPasswordResetPin,
+  resetPassword,
   refresh,
   logout,
   getMe,
   getActiveRefreshTokens,
   revokeRefreshToken,
+  revokeLoginSession,
 };
